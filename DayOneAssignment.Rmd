@@ -1,0 +1,57 @@
+---
+title: "Day One NCEAS Assignment-Becca"
+author: "Rebecca Cates"
+date: "11/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+# Introduction
+
+This data set explores crab abundance and size distribution along a sea otter gradient in SE Alaska for the years 2017, 2018, 2019. Multiple sites were sampled along the west coast of Prince of Wales island varying in sea otter density. In 2017, 21 sites were sampled, 6 in 2018 and 22 in 2019. At these sites, 4 strings with 1 fukui pot and one crab pot were attached to a line with a buoy and placed in ~15 ft of water at MLLW in eelgrass beds. Pots were soaked for 24 hrs and then pulled up. Crab species were identified, sexed and carapace width was measured (mm).
+
+
+A link to the APECS Lab home page explaining the different projects of this lab can be found [here](http://apecs-ak.org/)
+
+```{r}
+#load data into the environment
+
+crab<-read.csv("D:/Documents/UAF/Data 2019/Crab only data 2019.csv")
+
+```
+
+
+# Analysis
+For this assignment in the NCEAS Workshop, I am analyzing the frequency of crab carapace width by species to get an idea of crab size distribution by species among our sites across three years. 
+
+```{r}
+#load necessary packages
+library(tidyverse)
+
+#summarize relevant data
+summary(crab$species_scientific)
+summary(crab$carapace_width_mm)
+
+```
+
+
+# Results
+**Frequency Plot of Carapace Width (mm) of Crabs by Species**
+
+```{r}
+crab %>%
+  ggplot(aes(x=carapace_width_mm, fill=species_scientific))+ 
+  geom_histogram(alpha=0.5)+
+  labs(x="Carapace Width (mm)", y="Count", fill="Species")+
+  xlim(c(0,200))+
+  theme_classic()
+```
+
+# Adding a new session to practice commiting to Github
+```{r}
+summary(crab$Year)
+```
+
