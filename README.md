@@ -15,5 +15,5 @@ Once saved in R, a new modified file is created in R in the Git enironment to th
 
 # get in the llama
 
-Commitment is hard
+Commitment is hard but Github will teach me
 
