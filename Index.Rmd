@@ -1,5 +1,5 @@
 ---
-title: "My Manuscript Page"
+title: "index 2.0"
 author: "Rebecca Cates"
 date: "11/5/2019"
 output: html_document
