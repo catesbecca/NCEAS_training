@@ -13,6 +13,7 @@ Once saved in R, a new modified file is created in R in the Git enironment to th
 # Second session to create 4 commits
 
 
+# get in the llama
 
 Commitment is hard
 
