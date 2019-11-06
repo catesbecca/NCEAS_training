@@ -1,0 +1,166 @@
+---
+title: "Data Tidying"
+author: "Rebecca Cates"
+date: "11/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+
+```
+
+
+# Read and Clean Data
+```{r}
+
+catch_original <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1", method= "libcurl"), stringsAsFactors = FALSE)
+
+head(catch_original)
+```
+
+Remove `all` column and `notes` column because we don't need them
+```{r}
+#currently using select to KEEP the columns we want
+catch_data <- catch_original %>% 
+  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum)
+#can also do select(-All, -notesRegcode) to just DROP the columns you don't want
+
+head(catch_data)
+
+summary(catch_data)
+#can see that Chinook is a character, inaccurate. Needs to be fixed, next subsection
+```
+
+# Fix Chinook Column
+
+Use `mutate` to fix Chinook column
+```{r}
+catch_clean <- catch_data %>% 
+  mutate(Chinook = ifelse(Chinook == "I", 1, Chinook)) %>% 
+  mutate(Chinook = as.numeric(Chinook))
+
+#Originally introduces NA coercion without code line 46. To create code line 46 we did created the nex section. 
+
+summary(catch_clean)
+# Can see that one NA was introduced into the Chinook data column
+```
+
+# Finding the rows that got turned into NA
+```{r}
+#back to base r, is.na returns what vector/row is NA or not
+
+i <- which(is.na(catch_clean$Chinook)) 
+
+#see what the problem row is
+i
+
+catch_original[i,]
+#Can go back up to chunk where catch_clean was created and mutate data to get rid of row 401 by adding line of code -> mutate(Chinook = ifelse(Chinook == "I", 1, Chinook)) %>%
+```
+
+# Reshape Data
+
+```{r}
+# newwest version of melt, cast, reshape, spread and gather
+#pivot_wider is also useful and up to date
+
+catch_long <- catch_clean %>% 
+  pivot_longer(cols = -c(Region, Year),
+  names_to = "species",
+  values_to = "count")
+
+head(catch_long)
+
+```
+
+```{r}
+catch_wide <- catch_long %>% 
+  pivot_wider(names_from = Year,
+              values_from = count)
+
+head(catch_wide)
+```
+
+`rename` count column to `catch_thousands`
+```{r}
+catch_long <- catch_long %>% 
+  rename(catch_thousands = count)
+  
+head(catch_long)
+
+```
+```{r}
+catch_long <-catch_long %>% 
+  mutate(catch =catch_thousands *1000) %>% 
+  select(-catch_thousands)
+```
+
+# Summarize Data
+
+```{r}
+mean_region <- catch_long %>% 
+  group_by(Region, species) %>% 
+  summarize(catch_mean = mean(catch),
+            num_obs = n())
+
+mean_region
+
+```
+
+# Catch per Species Across All Years and Regions
+```{r}
+total_species <- catch_long %>% 
+  group_by(species) %>% 
+  summarise(total = sum (catch)) %>% 
+  arrange(desc(total))
+
+
+total_species
+
+```
+
+```{r}
+total_species_pre_1900 <- catch_long %>% 
+  filter(Year < 1900) %>% 
+  group_by(species) %>% 
+  summarise(total = sum (catch)) %>% 
+  arrange(desc(total))
+  
+total_species_pre_1900
+
+total_species_post_1900 <- catch_long %>% 
+  filter (Year > 1900) %>% 
+  group_by(species) %>% 
+  summarise(total = sum (catch)) %>% 
+  arrange(desc(total))
+
+total_species_post_1900
+```
+
+
+# Join To Region Table
+
+Read in region data table
+```{r}
+
+region_defs <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1", 
+    method="libcurl"),
+    stringsAsFactors = FALSE) %>% 
+    select(code, mgmtArea)
+
+head(region_defs)
+```
+
+```{r}
+catch_joined <- left_join(catch_long, region_defs, by=c("Region" = "code"))
+
+head(catch_joined)
+```
+
