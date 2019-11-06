@@ -164,3 +164,29 @@ catch_joined <- left_join(catch_long, region_defs, by=c("Region" = "code"))
 head(catch_joined)
 ```
 
+#Seperate and Unite
+
+```{r}
+site_codes <- data.frame(site = c("HAW-100",
+                                  "HAW-101",
+                                  "OAH-102",
+                                  "OAH-103",
+                                  "MAI-100"),
+                         stringsAsFactors = FALSE)
+
+site_codes
+```
+
+```{r}
+site_codes_split <- site_codes %>% 
+  separate(site, into = c("island", "site_num"), sep = "-", remove=FALSE)
+
+site_codes_split
+```
+```{r}
+united <- site_codes_split %>% 
+  unite(site_code, island, site_num, sep = "_")
+
+united
+```
+
