@@ -70,3 +70,7 @@ fahr
 fahr == airtemps
 ```
 
+
+```{r}
+```
+
