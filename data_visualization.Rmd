@@ -1,0 +1,62 @@
+---
+title: "Data Visualization"
+author: "Rebecca Cates"
+date: "11/7/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(leaflet)
+library(tidyr)
+library(scales)
+library(DT)
+```
+
+# Prepare Data
+
+```{r}
+data_url <- "https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3Af119a05b-bbe7-4aea-93c6-85434dcb1c5e"
+
+esc <- tryCatch(
+    read.csv("data/escapement.csv", stringsAsFactors = FALSE),
+    error=function(cond) {
+        message(paste("Escapement file does not seem to exist, so get it from the KNB."))
+        esc <- read.csv(url(data_url, method = "libcurl"), stringsAsFactors = FALSE)
+        write.csv(esc, "data/escapement.csv", row.names = F)
+        return(esc)
+    }
+)
+
+head(esc)
+```
+
+# Total escapement by Species, Region, Year
+  * only for Sockeye, Chinook, Coho, Pink, Chum
+```{r}
+
+total_escapement<- esc %>% 
+  separate(sampleDate, into = c("Year", "Month", "Day"), 
+  sep = "-",  remove=FALSE) %>% 
+  mutate(Year = as.numeric(Year)) %>% 
+  filter(Species %in% c("Sockeye", "Chinook", "Coho", "Chum", "Pink")) %>%
+  group_by(Species, SASAP.Region, Year) %>% 
+  summarise(total = sum (DailyCount)) %>% 
+  arrange(desc(total))
+  
+head(total_escapement)
+  
+  
+```
+
+
+# Create static plots
+
+# Create an interactive table
+
+# Create an interactive map
