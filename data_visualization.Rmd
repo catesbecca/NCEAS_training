@@ -40,7 +40,7 @@ head(esc)
   * only for Sockeye, Chinook, Coho, Pink, Chum
 ```{r}
 
-total_escapement<- esc %>% 
+annual_esc<- esc %>% 
   separate(sampleDate, into = c("Year", "Month", "Day"), 
   sep = "-",  remove=FALSE) %>% 
   mutate(Year = as.numeric(Year)) %>% 
@@ -49,7 +49,7 @@ total_escapement<- esc %>%
   summarise(total = sum (DailyCount)) %>% 
   arrange(desc(total))
   
-head(total_escapement)
+head(annual_esc)
   
   
 ```
@@ -57,6 +57,103 @@ head(total_escapement)
 
 # Create static plots
 
+```{r}
+#source of all your bar graphing woes over the last month: fill should not go in the aes parantheses, should go one line below in the geom_graphtype area
+
+ggplot(annual_esc, mapping = aes(x = Species, y = total)) + 
+  geom_col(fill = "blue")
+
+
+```
+
+```{r}
+ggplot(annual_esc, mapping=aes(x=Species, y=total, fill = SASAP.Region))+
+  geom_col()
+```
+
+```{r}
+#great way to ensure a continuous theme among users and yourself is to save the theme
+
+my_theme <- theme_bw()+
+  theme(legend.position = "bottom")
+
+#can create a palette of colors, want to make sure the number of colors you are using matches the number of variables. For instance:
+
+pal<- c("blue", "green", "khaki", "yellow", "red")
+
+#Then you can stick it into the below graph by using the code line "scale_color_manual(values = pal)"
+
+annual_esc %>% 
+  filter(SASAP.Region == "Kodiak") %>% 
+  ggplot(mapping = aes(x=Year, y= total, color=Species))+
+  geom_line()+
+  geom_point()+
+  scale_y_continuous(labels = comma)+
+  ylab("Escapement (num, fish)")+
+  ggtitle("Kodiak Salmon Escapement")+
+  theme_bw()+
+  theme(legend.position = "bottom")
+
+```
+```{r, fig.height = 7, fig.width= 6}
+
+  ggplot(annual_esc, mapping = aes(x=Year, y= total, color=Species))+
+  geom_line()+
+  geom_point()+
+  facet_wrap(~SASAP.Region, ncol=2, scales = "free_y")+
+  scale_y_continuous(labels = comma)+
+  ylab("Escapement (num, fish)")+
+  theme_bw()
+
+```
+
+
 # Create an interactive table
 
-# Create an interactive map
+```{r}
+#use distinct instead of select to pull out unique combinations of whatever values you give it
+
+locations <- esc %>% 
+  distinct(Location, Latitude, Longitude) %>% 
+  drop_na()
+
+locations
+```
+
+```{r}
+datatable(locations)
+#when you knit the document the table text shows up better
+```
+
+# Create an interactive 
+
+```{r}
+#leaflet uses a default WGS to project a map with your data overlayed on it
+
+leaflet(locations) %>%
+  addTiles() %>%
+  addMarkers(lng = ~Longitude, lat = ~Latitude, popup = ~Location)
+  
+  
+```
+```{r}
+#This is different because it adds tiles from a web map server, way to add a different set of tiles, satelite grid tiles instead of open street map tiles
+
+leaflet(locations) %>% 
+  addWMSTiles("https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?",
+              layers = 'GEBCO_LATEST',
+              attribution = "Imagery reproduced from the GEBCO_2014 Grid, version 20150318, www.gebco.net") %>%
+  addCircleMarkers(lng = ~Longitude,
+                   lat = ~Latitude,
+                   popup = ~ Location,
+                   radius = 5,
+                   # set fill properties
+                   fillColor = "salmon",
+                   fillOpacity = 1,
+                   # set stroke properties
+                   stroke = T,
+                   weight = 0.5,
+                   color = "white",
+                   opacity = 1)
+```
+
