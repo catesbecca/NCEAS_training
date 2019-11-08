@@ -9,22 +9,65 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+# Read in Data
+```{r}
+esc_counts <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3Af119a05b-bbe7-4aea-93c6-85434dcb1c5e", method= "libcurl"), stringsAsFactors = FALSE)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+head(esc_counts)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+goals_counts <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/knb.92014.1", method= "libcurl"), stringsAsFactors = FALSE)
 
-```{r cars}
-summary(cars)
+head(goals_counts)
+
+```
+# Escapement Data
+```{r}
+
+#filter for BB Sockeye
+ 
+#calculate total escapement by year and stock (location)
+  
+BB_Sockeye <- esc_counts %>% 
+  filter(Species == "Sockeye") %>%
+  filter(SASAP.Region == "Bristol Bay") %>% 
+  separate(sampleDate, into = c("Year", "Month", "Day"), 
+  sep = "-", remove=FALSE)
+
+  
+head(BB_Sockeye)
+
+esc_year_location <- BB_Sockeye %>% 
+  group_by(Year, Location) %>% 
+  summarise(total = sum (DailyCount)) %>% 
+  arrange(desc(total))
+
+head(esc_year_location)
+
+#stocks with escapement goals
+stock_goals <- goals_counts %>% 
+  filter(Region == "Bristol Bay") %>% 
+  filter(Species == "Sockeye") %>% 
+  mutate(Initial.Year = as.numeric (Initial.Year)) %>% 
+  mutate(Lower = ifelse(Lower == "eliminated", NA, Lower)) %>% 
+  mutate(Lower = as.numeric(Lower))
+
+#rename column in stock_goals from System to Location
+stock_goals <- stock_goals %>% 
+  rename(Location = System)
+
+#Identify where a goal exists and join
+esc_joined <- inner_join(stock_goals, 
+              esc_year_location, by=c("Location")) %>%
+              filter(Type != "OEG") %>% 
+              filter(Initial.Year >= Year)
+
+stocks_with_goals<- unique(esc_joined$Location)
+
+#proportion escapement by year and stock
+goals.met<-esc_joined %>% 
+  filter(Initial.Year >= Year) %>%  #by year
+  filter(Lower < total & Upper > total) #by stock
+
+
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
